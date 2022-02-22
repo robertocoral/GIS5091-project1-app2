@@ -1,9 +1,13 @@
 require([
+    "esri/config",
     "esri/Map",
     "esri/views/MapView",
-    "esri/layers/Layer",
-    "esri/widgets/Search",
-    ], function (Map, MapView, Layer, Search) {
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Search"
+    ], function (esriConfig,Map, MapView, FeatureLayer, Search) {
+  
+        esriConfig.apiKey = "AAPK46f57464803c4f51ad1e192af78e31f82ceOIxvtHx2AdmAvfFMB5rMhnid1IlMzs_i3su5KhQVNLfG1_P84UEJ3h1YtpCu6";
+  
         var map = new Map({
             basemap: "arcgis-terrain"
         });
@@ -18,36 +22,42 @@ require([
         var searchWidget = new Search({
             view: view
         });
-  
         view.ui.add(searchWidget, {
             position: "top-right"
         });
 
-        var nationalParks = Layer.fromPortalItem({
-            portalItem: {
-                id: "ccb7e9368789451a91269f6976b4dbd9"
-            }
-        }).then(addLayer)
-          .catch(rejection);
-  
-        var airports = Layer.fromPortalItem({
-            portalItem: {
-                id: "6c917a24cbdb4ecf98f49f918a27b906"
-            }
-        }).then(addLayer)
-          .catch(rejection);
-  
-        var trails = Layer.fromPortalItem({
-            portalItem: {
-                id: "0086120c2bda4f929a931147a4c6f542"
-            }
-        }).then(addLayer)
-          .catch(rejection);
-
-        function addLayer(trails) {
-            map.add(trails);
+        const popupNationalPark = {
+            "title": "National Park",
+            "content": "<b>Name:</b> {Name}<br><b>Area:</b> {SQMI} sq mi<br>"
         }
-        function rejection(error) {
-            console.log("Layer failed to load: ", error);
+        const nationalParks = new FeatureLayer({
+            url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Parks/FeatureServer",
+            outFields: ["Name","SQMI"],
+            popupTemplate: popupNationalPark
+        });
+        nationalParks.definitionExpression = "Name LIKE '%National Park%'";
+        map.add(nationalParks);
+  
+        const popupAirports = {
+            "title": "Airport",
+            "content": "<b>Name:</b> {NAME}<br><b>Passengers:</b> {PASSENGERS}<br>"
         }
+        const airports = new FeatureLayer({
+            url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Airports_by_scale/FeatureServer",
+            outFields: ["NAME","PASSENGERS"],
+            popupTemplate: popupAirports
+        });
+        map.add(airports);
+  
+        const popupTrails = {
+            "title": "Trail",
+            "content": "<b>Name:</b> {TRLNAME}<br><b>Surface:</b> {TRLSURFACE}<br><b>Type:</b> {TRLTYPE}<br><b>Status:</b> {TRLSTATUS}<br><b>Use:</b> {TRLUSE}"
+        }
+        const trails = new FeatureLayer({
+            url: "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/National_Park_Service_Trails/FeatureServer",
+            outFields: ["TRLNAME", "TRLSURFACE", "TRLTYPE", "TRLSTATUS", "TRLUSE"],
+            popupTemplate: popupTrails
+        });
+        map.add(trails);
+  
 });
